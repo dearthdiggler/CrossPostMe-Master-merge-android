@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Saved Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Saved Diagrams</h1>
+    <button id="load">Load Diagrams</button>
+    <div id="list"></div>
+    <div id="preview"></div>
+
+    <script>
+      mermaid.initialize({ startOnLoad: false });
+      document.getElementById("load").onclick = async function () {
+        const resp = await fetch("/api/diagrams/");
+        if (!resp.ok) {
+          document.getElementById("list").innerText =
+            "Error loading diagrams: " + resp.statusText;
+          return;
+        }
+        const arr = await resp.json();
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+        arr.forEach((d) => {
+          const btn = document.createElement("button");
+          btn.innerText = d.name;
+          btn.onclick = function () {
+            const p = document.getElementById("preview");
+            // Clear previous preview
+            p.textContent = "";
+            // Create a container for mermaid markup and set textContent to avoid HTML injection
+            const container = document.createElement("div");
+            container.className = "mermaid";
+            container.textContent = d.mermaid_code;
+            p.appendChild(container);
+            // Initialize mermaid only on the new container
+            mermaid.init(undefined, container);
+          };
+          list.appendChild(btn);
+          list.appendChild(document.createElement("br"));
+        });
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,42 @@
+# This file configures GitHub's Dependabot to automatically create pull requests
+# to keep all of your project's dependencies up-to-date.
+# See the documentation for all configuration options:
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+
+  # 1. Check for npm dependency updates (for the frontend app)
+  - package-ecosystem: "npm"
+    directory: "/app/frontend"
+    schedule:
+      interval: "daily"
+    # Group minor and patch updates together to reduce noise
+    groups:
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # 2. Check for pip dependency updates (for the backend app)
+  - package-ecosystem: "pip"
+    directory: "/app/backend"
+    schedule:
+      interval: "daily"
+    groups:
+      pip-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # 3. Check for Docker base image updates
+  - package-ecosystem: "docker"
+    directory: "/" # Check all Dockerfiles in the repo
+    schedule:
+      interval: "daily"
+
+  # 4. Check for GitHub Actions updates (for the CI workflow itself)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"

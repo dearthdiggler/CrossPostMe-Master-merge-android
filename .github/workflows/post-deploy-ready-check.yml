@@ -1,0 +1,24 @@
+name: Post-deploy readiness check
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: 'Backend base URL (https://...)'
+        required: true
+
+jobs:
+  ready-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check readiness endpoint
+        run: |
+          set -e
+          echo "Checking ${{ github.event.inputs.backend_url }}/api/ready"
+          status=$(curl -s -o /dev/null -w "%{http_code}" "${{ github.event.inputs.backend_url }}/api/ready")
+          echo "HTTP status: $status"
+          if [ "$status" != "200" ]; then
+            echo "Readiness check failed (status $status)"
+            exit 1
+          fi
+          echo "Readiness check passed"

@@ -1,0 +1,74 @@
+services:
+  # Web Service (API Backend)
+  - type: web
+    name: crosspostme-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: TWITTER_API_KEY
+        sync: false
+      - key: LINKEDIN_CLIENT_ID
+        sync: false
+      - key: FACEBOOK_APP_ID
+        sync: false
+      - key: INSTAGRAM_ACCESS_TOKEN
+        sync: false
+    healthCheckPath: /health
+    
+  # Background Worker (Queue Processing)
+  - type: worker
+    name: crosspostme-worker
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A worker.celery_app worker --loglevel=info
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: crosspostme-api
+          envVarKey: DATABASE_URL
+      - key: REDIS_URL
+        fromService:
+          type: web
+          name: crosspostme-api
+          envVarKey: REDIS_URL
+
+  # Redis Cache/Queue
+  - type: redis
+    name: crosspostme-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  # PostgreSQL Database
+  - name: crosspostme-db
+    databaseName: crosspostme
+    user: crosspostme_user
+    plan: free

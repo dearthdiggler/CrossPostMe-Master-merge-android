@@ -1,0 +1,93 @@
+from typing import Optional
+
+import asyncio
+import time
+
+from fastapi import Header, HTTPException, Request
+from motor.motor_asyncio import AsyncIOMotorDatabase
+
+from services.auth import verify_token
+
+
+async def get_db(request: Request) -> AsyncIOMotorDatabase:
+    """Return the Motor database instance stored on app.state.
+
+    This centralizes database access and makes testing easier by attaching a
+    fake/fixture DB to app.state in tests.
+    """
+    db = getattr(request.app.state, "db", None)
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database connection not initialized")
+    return db
+
+
+async def get_current_user(authorization: Optional[str] = Header(None)) -> Optional[str]:
+    """Resolve an optional Bearer token to a user id using services.auth.verify_token.
+
+    Returns None when no valid token is present.
+    """
+    if not authorization:
+        return None
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return None
+    token = parts[1]
+    return verify_token(token)
+
+
+class RateLimiter:
+    """Simple in-memory token-bucket rate limiter (single-process).
+
+    Note: This is suitable for development and tests only. For production, use
+    a shared backend like Redis so limits are enforced across processes.
+    """
+
+    def __init__(self) -> None:
+        self._buckets: dict[str, tuple[float, float]] = {}
+        self._lock = asyncio.Lock()
+
+    async def allow(self, key: str, capacity: int, per_seconds: int) -> bool:
+        now = time.time()
+        async with self._lock:
+            tokens, last = self._buckets.get(key, (float(capacity), now))
+            elapsed = now - last
+            if elapsed > 0 and per_seconds > 0:
+                refill = (elapsed / per_seconds) * capacity
+                tokens = min(float(capacity), tokens + refill)
+            if tokens >= 1.0:
+                tokens -= 1.0
+                self._buckets[key] = (tokens, now)
+                return True
+            self._buckets[key] = (tokens, now)
+            return False
+
+
+_GLOBAL_RATE_LIMITER = RateLimiter()
+
+
+def rate_limit_dependency(capacity: int = 10, per_seconds: int = 60):
+    """Factory returning a FastAPI dependency enforcing a per-key rate limit.
+
+    Keying: if Authorization Bearer token present, use `user:{token}`, otherwise
+    use the client IP `ip:{ip}`.
+    """
+
+    async def _dep(request: Request, authorization: Optional[str] = Header(None)):
+        if authorization:
+            parts = authorization.split()
+            token = parts[1] if len(parts) == 2 and parts[0].lower() == "bearer" else None
+        else:
+            token = None
+
+        if token:
+            key = f"user:{token}"
+        else:
+            client = getattr(request, "client", None)
+            ip = client.host if client is not None else "unknown"
+            key = f"ip:{ip}"
+
+        allowed = await _GLOBAL_RATE_LIMITER.allow(key, capacity, per_seconds)
+        if not allowed:
+            raise HTTPException(status_code=429, detail="Too many requests")
+
+    return _dep

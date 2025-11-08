@@ -1,0 +1,23 @@
+# Supabase project configuration.
+# See https://supabase.com/docs/guides/cli/config
+
+[project_id]
+id = "crosspostme-supabase"
+version = "1.0.0"
+
+[api]
+port = 8000
+schemas = ["public", "storage"]
+extra_search_path = ["public"]
+
+[db]
+port = 5432
+major_version = 15
+
+[studio]
+port = 54321
+
+[auth]
+enable_signup = true
+# Add any third-party providers here, e.g., ["apple", "google"]
+external_providers = []

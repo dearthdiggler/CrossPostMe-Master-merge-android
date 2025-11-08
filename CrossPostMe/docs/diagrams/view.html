@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Ad Diagram Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ad Diagram Viewer</h1>
+    <p>
+      Paste Mermaid text below and click Render to preview. Use the "Download
+      SVG" button to ask the server to render an SVG via the API.
+    </p>
+    <textarea id="mermaidText" rows="18" cols="80">
+flowchart TB\n  A --> B</textarea
+    >
+    <div>
+      <button id="render">Render</button>
+      <button id="download">Download SVG</button>
+    </div>
+    <div id="diagram"></div>
+
+    <script>
+      mermaid.initialize({ startOnLoad: false });
+      document.getElementById("render").onclick = function () {
+        var text = document.getElementById("mermaidText").value;
+        var container = document.getElementById("diagram");
+        container.innerHTML = '<div class="mermaid">' + text + "</div>";
+        mermaid.init(undefined, container);
+      };
+      document.getElementById("download").onclick = async function () {
+        const text = document.getElementById("mermaidText").value;
+        const resp = await fetch("/api/ads/render/svg", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: text,
+        });
+        if (!resp.ok) {
+          alert(
+            "Server rendering not available: " +
+              resp.status +
+              " " +
+              (await resp.text()),
+          );
+          return;
+        }
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "diagram.svg";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+    </script>
+  </body>
+</html>

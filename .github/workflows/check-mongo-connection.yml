@@ -1,0 +1,26 @@
+name: Check MongoDB connection
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-mongo:
+    runs-on: ubuntu-latest
+    environment: CrossEnv
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install pymongo
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pymongo
+
+      - name: Run MongoDB connectivity check
+        run: |
+          python app/backend/scripts/check_mongo.py
