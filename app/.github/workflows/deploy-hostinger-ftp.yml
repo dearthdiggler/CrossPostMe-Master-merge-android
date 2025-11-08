@@ -1,0 +1,75 @@
+name: Deploy Landing Page to Hostinger (SSH)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: CrossEnv
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node (for completeness)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build landing page
+        run: |
+          set -euo pipefail
+          cd app/landing
+          npm install
+          npm run build
+
+      - name: Deploy build to Hostinger (SSH)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+          # package build into a tar in runner temp and upload
+          TAR_PATH="$RUNNER_TEMP/landing_build.tar.gz"
+          tar -C app/landing/build -czf "$TAR_PATH" .
+
+          # stream tar over ssh (avoids scp/sftp differences on some hosts)
+          UPLOAD_LOG="$RUNNER_TEMP/upload_log.txt"
+          if [ -n "${PORT:-}" ]; then
+            set +e
+            tar -C app/landing/build -czf - . | ssh -v -i ~/.ssh/id_ed25519 -p "${PORT}" ${USER}@${HOST} "cat > /tmp/landing_build.tar.gz" > "$UPLOAD_LOG" 2>&1
+            UPLOAD_EXIT=$?
+            set -e
+          else
+            set +e
+            tar -C app/landing/build -czf - . | ssh -v -i ~/.ssh/id_ed25519 ${USER}@${HOST} "cat > /tmp/landing_build.tar.gz" > "$UPLOAD_LOG" 2>&1
+            UPLOAD_EXIT=$?
+            set -e
+          fi
+
+          if [ "$UPLOAD_EXIT" -ne 0 ]; then
+            echo "upload via tar|ssh failed with exit $UPLOAD_EXIT; upload log follows:";
+            sed -n '1,200p' "$UPLOAD_LOG" || true;
+            exit $UPLOAD_EXIT
+          fi
+
+          if [ -n "${PORT:-}" ]; then
+            ssh -v -i ~/.ssh/id_ed25519 -p "${PORT}" ${USER}@${HOST} "mkdir -p /home/${USER}/domains/crosspostme.com/public_html && tar -C /home/${USER}/domains/crosspostme.com/public_html -xzf /tmp/landing_build.tar.gz && rm -f /tmp/landing_build.tar.gz" 2>&1
+          else
+            ssh -v -i ~/.ssh/id_ed25519 ${USER}@${HOST} "mkdir -p /home/${USER}/domains/crosspostme.com/public_html && tar -C /home/${USER}/domains/crosspostme.com/public_html -xzf /tmp/landing_build.tar.gz && rm -f /tmp/landing_build.tar.gz" 2>&1
+          fi
+
+          rm -f "$TAR_PATH" || true
+
+          if [ -n "${PORT:-}" ]; then
+            ssh -i ~/.ssh/id_ed25519 -p "${PORT}" ${USER}@${HOST} "ls -la /home/${USER}/domains/crosspostme.com/public_html | head -n 40"
+          else
+            ssh -i ~/.ssh/id_ed25519 ${USER}@${HOST} "ls -la /home/${USER}/domains/crosspostme.com/public_html | head -n 40"
+          fi

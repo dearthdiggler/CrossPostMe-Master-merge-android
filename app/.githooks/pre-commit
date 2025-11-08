@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Portable pre-commit hook: try `python`, fall back to `python3`.
+set -euo pipefail
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+# prefer `python`, else `python3`
+PY=python
+if ! command -v "$PY" >/dev/null 2>&1; then
+	PY=python3
+fi
+
+if ! command -v "$PY" >/dev/null 2>&1; then
+	echo "No python executable found (tried 'python' and 'python3'). Skipping brand check."
+	exit 0
+fi
+
+"$PY" "$ROOT_DIR/scripts/check_no_legacy_brand.py" --staged

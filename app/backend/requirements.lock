@@ -1,0 +1,2 @@
+# Python requirements lockfile for backend
+# Use pip freeze > requirements.lock to generate exact versions for deployment

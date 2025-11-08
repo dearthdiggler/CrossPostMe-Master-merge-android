@@ -1,0 +1,10 @@
+# Stripe Payment Processing Dependencies
+# Install with: pip install -r requirements-stripe.txt
+
+# Stripe Python SDK
+stripe==11.5.0
+
+# Already in main requirements.txt but listed here for reference:
+# fastapi
+# pydantic
+# python-dotenv

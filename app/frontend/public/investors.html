@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrossPostMe - The $2B Opportunity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+        }
+        .header-gradient {
+            background-image: linear-gradient(135deg, #0f172a 0%, #164e63 100%);
+        }
+        .slide {
+            background-color: #ffffff;
+            padding: 2rem 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 3rem;
+            max-width: 64rem; /* 1024px */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .metric-card {
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .highlight-green {
+            color: #047857; /* Green 700 */
+        }
+        .highlight-teal {
+            color: #0d9488; /* Teal 600 */
+        }
+        .highlight-sky {
+            color: #0284c7; /* Sky 600 */
+        }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen">
+
+    <!-- HEADER -->
+    <div class="header-gradient pt-12 pb-24 shadow-xl">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-6xl sm:text-7xl font-extrabold tracking-tight mb-3 text-white">🚀 CROSSPOSTME</h1>
+            <h2 class="text-3xl sm:text-4xl font-light text-teal-300">Selling online is broken. We fixed it.</h2>
+            <p class="mt-4 text-xl text-gray-300 max-w-3xl mx-auto">
+                A launch-ready SaaS with a data-driven moat and exceptional unit economics.
+            </p>
+        </div>
+    </div>
+
+    <!-- HIGH-IMPACT METRICS -->
+    <main class="-mt-16">
+        <div class="slide">
+            <h3 class="text-4xl font-extrabold text-center text-gray-900 mb-8">This is a $2B Exit in the Making.</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 text-center mb-10">
+
+                <!-- Card 1: LTV:CAC -->
+                <div class="metric-card bg-teal-50 border-2 border-teal-500 shadow-lg">
+                    <p class="text-sm font-semibold uppercase text-teal-700">LTV:CAC Ratio</p>
+                    <p class="text-8xl font-extrabold my-2 highlight-teal">33:1</p>
+                    <p class="text-lg text-gray-600">Industry benchmark is 3:1.<br/>We are 11x better.</p>
+                </div>
+
+                <!-- Card 2: ROI -->
+                <div class="metric-card bg-teal-50 border-2 border-teal-500 shadow-lg">
+                    <p class="text-sm font-semibold uppercase text-teal-700">5-Year Investor ROI</p>
+                    <p class="text-8xl font-extrabold my-2 highlight-teal">413x</p>
+                    <p class="text-lg text-gray-600">(Base Case)<br/>$100K becomes $41.3M.</p>
+                </div>
+
+                <!-- Card 3: Payback -->
+                <div class="metric-card bg-gray-100 border border-gray-200">
+                    <p class="text-sm font-semibold uppercase text-gray-500">CAC Payback Period</p>
+                    <p class="text-8xl font-extrabold my-2 highlight-green">0.5</p>
+                    <p class="text-lg text-gray-600">Months.<br/>Benchmark is 12 months.</p>
+                </div>
+
+                <!-- Card 4: Profitability -->
+                <div class="metric-card bg-gray-100 border border-gray-200">
+                    <p class="text-sm font-semibold uppercase text-gray-500">Profitability</p>
+                    <p class="text-7xl font-extrabold my-2 highlight-sky">Month 5</p>
+                    <p class="text-md text-gray-600">Ahead of plan.<br/>$1.15M Year 1 EBITDA.</p>
+                </div>
+
+                <!-- Card 5: Market -->
+                <div class="metric-card bg-gray-100 border border-gray-200">
+                    <p class="text-sm font-semibold uppercase text-gray-500">Market (TAM)</p>
+                    <p class="text-7xl font-extrabold my-2 highlight-sky">$50B+</p>
+                    <p class="text-md text-gray-600">130M+ sellers.<br/>Market leader has < 0.03%.</p>
+                </div>
+
+                <!-- Card 6: ARR -->
+                <div class="metric-card bg-gray-100 border border-gray-200">
+                    <p class="text-sm font-semibold uppercase text-gray-500">Year 1 ARR</p>
+                    <p class="text-7xl font-extrabold my-2 highlight-sky">$4.9M</p>
+                    <p class="text-md text-gray-600">On a $180K marketing spend.<br/>Ready to scale.</p>
+                </div>
+            </div>
+
+            <!-- =========== GEMINI AI DEMO SECTION START =========== -->
+            <section class="max-w-3xl mx-auto mt-16 text-center border-t pt-10">
+                <h3 class="text-4xl font-extrabold text-center text-gray-900 mb-4">✨ See Our AI Moat in Action</h3>
+                <p class="text-lg text-gray-600 mb-6">This is a live demo of our core Gemini-powered feature. Enter a product you want to sell and watch our AI write the listing for you.</p>
+
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="productInput" class="flex-grow w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="e.g., 'Used red mountain bike', 'Vintage leather chair'">
+                    <button id="generateButton" class="bg-teal-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 hover:bg-teal-700 hover:scale-105">
+                        ✨ Generate Listing
+                    </button>
+                </div>
+
+                <div id="loadingIndicator" class="hidden text-gray-600 mt-4">
+                    Generating...
+                </div>
+
+                <div id="outputArea" class="hidden mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6 text-left">
+                    <pre id="listingOutput" class="text-gray-700 whitespace-pre-wrap font-sans"></pre>
+                </div>
+
+                <div id="errorArea" class="hidden mt-4 text-red-600">
+                    <!-- Error messages will be inserted here -->
+                </div>
+            </section>
+            <!-- =========== GEMINI AI DEMO SECTION END =========== -->
+
+            <!-- CALL TO ACTION -->
+            <section class="max-w-3xl mx-auto mt-10 mb-8 text-center border-t pt-10">
+                <div class="bg-gray-800 text-white p-8 rounded-xl my-8 border border-gray-700">
+                    <h4 class="text-3xl font-bold text-teal-300 mb-4">The Opportunity</h4>
+                    <p class="text-2xl text-gray-200">
+                        We're raising <strong class="text-white">$1,000,000</strong> at a <strong class="text-white">$4M pre-money valuation</strong>.
+                    </p>
+                    <p class="text-lg text-gray-400 mt-2">The product is built. The market is validated. The team is ready to launch.</p>
+                </div>
+
+                <div class="p-8">
+                    <h4 class="text-3xl font-bold text-gray-900 mb-4">Are you in?</h4>
+                    <p class="text-2xl text-gray-700 mb-2">
+                        📧 <a href="mailto:info@crosspostme.com" class="text-blue-600 hover:text-blue-800">info@crosspostme.com</a>
+                    </p>
+                    <p class="text-2xl text-gray-700 mb-2">
+                        📞 <a href="tel:3072280303" class="text-blue-600 hover:text-blue-800">307-228-0303</a>
+                    </p>
+                    <p class="text-2xl text-gray-700 mb-6">
+                        🗓️ <a href="http://calendly.com/crosspostme" target="_blank" class="text-blue-600 hover:text-blue-800">calendly.com/crosspostme</a>
+                    </p>
+                    <a href="http://crosspostme.com/investors" target="_blank" class="inline-block bg-green-600 text-white font-bold py-4 px-10 text-xl rounded-full transition-all duration-300 hover:bg-green-700 hover:scale-105">
+                        Download Full Pitch Deck
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const productInput = document.getElementById('productInput');
+        const generateButton = document.getElementById('generateButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const outputArea = document.getElementById('outputArea');
+        const listingOutput = document.getElementById('listingOutput');
+        const errorArea = document.getElementById('errorArea');
+
+        generateButton.addEventListener('click', () => {
+            const productDescription = productInput.value;
+            if (!productDescription) {
+                showError("Please enter a product description.");
+                return;
+            }
+            callGeminiAPI(productDescription);
+        });
+
+        async function callGeminiAPI(productDescription) {
+            // Reset UI
+            showLoading(true);
+            showError(null);
+            outputArea.classList.add('hidden');
+
+            const systemPrompt = "You are an expert marketplace seller and copywriter. Your job is to write compelling, high-converting product listings. You must generate a catchy title, 3-4 compelling bullet points, and a suggested price range. Format your response clearly. Do not use markdown.";
+            const userQuery = `Generate a product listing for: "${productDescription}"`;
+
+            const apiKey = ""; // API key will be automatically provided in the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            // Implement exponential backoff for retries
+            let response;
+            let delay = 1000;
+            for (let i = 0; i < 5; i++) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        break; // Success
+                    } else if (response.status === 429 || response.status >= 500) {
+                        // Retry on rate limiting or server errors
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    } else {
+                        // Don't retry on other client errors
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+                } catch (error) {
+                    if (i === 4) { // Last retry failed
+                         console.error("Error calling Gemini API:", error);
+                        showError("Sorry, an error occurred while generating the listing. Please try again.");
+                        showLoading(false);
+                        return;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+
+
+            try {
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const text = candidate.content.parts[0].text;
+                    listingOutput.textContent = text;
+                    outputArea.classList.remove('hidden');
+                } else {
+                    throw new Error("Invalid response structure from API.");
+                }
+
+            } catch (error) {
+                console.error("Error parsing response:", error);
+                showError("Sorry, an error occurred while processing the response.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(isLoading) {
+            if (isLoading) {
+                generateButton.disabled = true;
+                generateButton.textContent = "Generating...";
+                loadingIndicator.classList.remove('hidden');
+            } else {
+                generateButton.disabled = false;
+                generateButton.textContent = "✨ Generate Listing";
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        function showError(message) {
+            if (message) {
+                errorArea.textContent = message;
+                errorArea.classList.remove('hidden');
+            } else {
+                errorArea.classList.add('hidden');
+            }
+        }
+    </script>
+
+</body>
+</html>

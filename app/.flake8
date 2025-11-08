@@ -1,0 +1,4 @@
+[flake8]
+ignore = E203, W503
+max-line-length = 88
+exclude = .git,__pycache__,.venv,frontend/node_modules,backend/*_output.txt,backend/*_rc.txt

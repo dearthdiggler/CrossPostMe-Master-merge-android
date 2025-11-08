@@ -1,0 +1,9 @@
+{
+  "name": "stripe-payment-dependencies",
+  "description": "Stripe-specific dependencies for CrossPostMe frontend",
+  "dependencies": {
+    "@stripe/stripe-js": "^4.10.0",
+    "@stripe/react-stripe-js": "^3.1.0"
+  },
+  "installation": "npm install @stripe/stripe-js @stripe/react-stripe-js"
+}

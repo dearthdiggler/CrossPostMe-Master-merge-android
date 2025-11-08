@@ -1,0 +1,16 @@
+{
+  "short_name": "CrossPostMe",
+  "name": "CrossPostMe - Multi-Platform Marketplace Posting",
+  "description": "Cross-post your items to OfferUp, Craigslist, Facebook Marketplace, and eBay automatically",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#3B82F6",
+  "background_color": "#ffffff"
+}

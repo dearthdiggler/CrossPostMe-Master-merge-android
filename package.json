@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@sentry/react": "^10.22.0",
+    "stripe": "^19.1.0"
+  }
+}

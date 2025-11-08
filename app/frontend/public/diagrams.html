@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Diagrams — Crosspostme</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial;
+        padding: 1rem;
+      }
+      .diagram {
+        border: 1px solid #e5e7eb;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Diagrams</h1>
+    <div id="list"></div>
+    <script>
+      mermaid.initialize({ startOnLoad: false });
+
+      async function load() {
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+        let res;
+        try {
+          res = await fetch("/api/diagrams/");
+        } catch (networkErr) {
+          console.error("Network error fetching diagrams:", networkErr);
+          const msg = document.createElement("div");
+          msg.className = "text-red-600";
+          msg.textContent =
+            "Unable to load diagrams — network error. Please try again.";
+          list.appendChild(msg);
+          return;
+        }
+
+        if (!res.ok) {
+          console.error(
+            "Server returned error fetching diagrams:",
+            res.status,
+            res.statusText,
+          );
+          const msg = document.createElement("div");
+          msg.className = "text-red-600";
+          msg.textContent = `Unable to load diagrams (server error: ${res.status}). Please try again later.`;
+          list.appendChild(msg);
+          return;
+        }
+
+        let diagrams;
+        try {
+          diagrams = await res.json();
+        } catch (parseErr) {
+          console.error("Failed to parse diagrams JSON:", parseErr);
+          const msg = document.createElement("div");
+          msg.className = "text-red-600";
+          msg.textContent = "Received invalid data from server.";
+          list.appendChild(msg);
+          return;
+        }
+
+        for (const d of diagrams) {
+          const container = document.createElement("div");
+          container.className = "diagram";
+          const title = document.createElement("h3");
+          title.textContent = d.title;
+          const pre = document.createElement("div");
+          pre.className = "mermaid";
+          pre.textContent = d.mermaid;
+          container.appendChild(title);
+          container.appendChild(pre);
+          list.appendChild(container);
+          try {
+            mermaid.init(undefined, pre);
+          } catch (err) {
+            console.error("mermaid render error", err);
+          }
+        }
+      }
+
+      load().catch(console.error);
+    </script>
+  </body>
+</html>

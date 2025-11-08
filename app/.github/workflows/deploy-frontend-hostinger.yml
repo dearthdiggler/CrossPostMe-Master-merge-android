@@ -1,0 +1,45 @@
+name: Deploy Frontend to Hostinger (FTP)
+
+on:
+  push:
+    branches: [master]
+
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        working-directory: app/frontend
+        run: |
+          yarn install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: app/frontend
+        run: |
+          yarn build
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "app/frontend/build" ] || [ -z "$(ls -A app/frontend/build)" ]; then
+            echo "Build output missing or empty!"
+            exit 1
+          fi
+
+      - name: Upload build to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.HOSTINGER_FTP_HOST }}
+          username: ${{ secrets.HOSTINGER_FTP_USER }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          local-dir: app/frontend/build
+          server-dir: ${{ secrets.HOSTINGER_FTP_PATH }}

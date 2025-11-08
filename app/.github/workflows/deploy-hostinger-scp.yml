@@ -1,0 +1,54 @@
+name: Deploy Frontend to Hostinger (SSH)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: CrossEnv
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies and build
+        working-directory: app/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare SSH key
+        env:
+          # use the environment secret name present in the repo settings
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+        run: |
+          echo "$SSH_KEY" > hostinger_deploy_key
+          chmod 600 hostinger_deploy_key
+
+      - name: Create tarball of build
+        working-directory: ${{ github.workspace }}
+        run: |
+          BUILD_DIR=app/frontend/build
+          if [ ! -d "$BUILD_DIR" ]; then echo "Build directory not found: $BUILD_DIR"; exit 1; fi
+          TAR_NAME=frontend_build_$(date +%s).tar.gz
+          # create tar of the contents of the build directory (so extraction will place files directly into target)
+          tar -C "$BUILD_DIR" -czf "$TAR_NAME" .
+          echo "TAR_NAME=$TAR_NAME" > tar_info.txt
+
+      - name: Upload tarball and extract on remote
+        env:
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        run: |
+          TAR_NAME=$(cat tar_info.txt | sed -n 's/^TAR_NAME=//p')
+          if [ -z "$TAR_NAME" ] || [ ! -f "$TAR_NAME" ]; then echo "Tar file missing: $TAR_NAME"; exit 1; fi
+          # copy to remote /tmp and extract into public
+          scp -i hostinger_deploy_key -P ${SSH_PORT} -o StrictHostKeyChecking=no "$TAR_NAME" ${SSH_USER}@${SSH_HOST}:/tmp/ || { echo 'scp failed'; exit 1; }
+          ssh -i hostinger_deploy_key -p ${SSH_PORT} -o StrictHostKeyChecking=no ${SSH_USER}@${SSH_HOST} "mkdir -p public && tar -xzf /tmp/$TAR_NAME -C public && rm -f /tmp/$TAR_NAME"
+          echo "Deployed $TAR_NAME to ${SSH_USER}@${SSH_HOST}:public/"

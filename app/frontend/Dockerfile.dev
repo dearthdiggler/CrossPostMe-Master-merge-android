@@ -1,0 +1,22 @@
+# Dockerfile for DEVELOPMENT only
+# This file's purpose is to run the Vite development server.
+
+FROM node:20-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package files and install dependencies
+# We copy package.json first to leverage Docker's cache.
+COPY package.json yarn.lock* ./
+RUN yarn install
+
+# Copy the rest of the application source code
+COPY . .
+
+# Expose the Vite port
+EXPOSE 3000
+
+# The command to start the Vite development server
+# The "--host 0.0.0.0" is crucial to make it accessible from outside the container
+CMD ["yarn", "start"]

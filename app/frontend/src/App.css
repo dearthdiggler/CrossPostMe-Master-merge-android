@@ -1,0 +1,54 @@
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Remove default margin */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* App container */
+.App {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Specific transitions for interactive elements only */
+button {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+input,
+textarea,
+select {
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+a {
+  transition: color 0.3s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}

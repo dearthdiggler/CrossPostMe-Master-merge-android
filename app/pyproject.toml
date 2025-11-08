@@ -1,0 +1,16 @@
+[tool.black]
+line-length = 88
+exclude = '(app/app/|\.venv|\.git)'
+
+[tool.isort]
+profile = "black"
+skip = ["app/app/"]
+
+[tool.ruff]
+# Legacy top-level ruff table kept for backwards compatibility. Newer ruff
+# versions expect lint-related settings under the `lint` subsection.
+
+[tool.ruff.lint]
+# Rules/settings that used to live at [tool.ruff] are placed here.
+extend-ignore = []
+exclude = ["app/app/"]

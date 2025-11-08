@@ -1,0 +1,145 @@
+name: Trigger Render Deploy
+
+on:
+  push:
+    branches:
+      - master
+    # Only trigger when backend or deployment files change to avoid unnecessary deploys
+    paths:
+      - 'app/backend/**'
+      - 'app/backend/**/**'
+      - 'app/backend/requirements.txt'
+      - 'pyproject.toml'
+      - 'Dockerfile.backend'
+      - 'render.yaml'
+      - '.github/workflows/trigger-render-deploy.yml'
+  workflow_dispatch: {}
+
+jobs:
+  trigger-deploy:
+    name: Trigger Render deploy for master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trigger Render deploy and wait
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          CROSSPOSTME_RENDERAPIKEY: ${{ secrets.CROSSPOSTME_RENDERAPIKEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL }}
+        run: |
+          set -euo pipefail
+
+          # Support two secret names: RENDER_API_KEY (preferred) or CROSSPOSTME_RENDERAPIKEY (legacy)
+          # Choose first non-empty value
+          if [ -n "${RENDER_API_KEY:-}" ]; then
+            API_KEY="$RENDER_API_KEY"
+          else
+            API_KEY="${CROSSPOSTME_RENDERAPIKEY:-}"
+          fi
+
+          if [ -z "${API_KEY:-}" ] || [ -z "${RENDER_SERVICE_ID:-}" ]; then
+            echo "Missing required secrets: RENDER_API_KEY (or CROSSPOSTME_RENDERAPIKEY) and/or RENDER_SERVICE_ID" >&2
+            exit 1
+          fi
+
+          echo "Triggering a manual deploy on Render for service: $RENDER_SERVICE_ID"
+          resp=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer $API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys")
+
+          http_code=$(echo "$resp" | tail -n1)
+          body=$(echo "$resp" | sed '$d')
+
+          echo "Render response HTTP code: $http_code"
+          echo "Response body: $body"
+
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "Failed to trigger Render deploy" >&2
+            exit 1
+          fi
+
+          # Extract deploy id from response body (use jq if available for robust parsing)
+          if command -v jq >/dev/null 2>&1; then
+            deploy_id=$(echo "$body" | jq -r '.id // empty')
+          else
+            echo "jq not found on runner; attempting to parse with python fallback"
+            deploy_id=$(echo "$body" | python -c "import sys,json;print(json.load(sys.stdin).get('id',''))") || true
+          fi
+          if [ -z "$deploy_id" ]; then
+            echo "Could not extract deploy id from Render response; response was: $body" >&2
+            exit 1
+          fi
+
+          echo "Triggered deploy id: $deploy_id"
+
+          # Poll deploy status until it reaches a terminal state
+          max_attempts=30
+          attempt=0
+          sleep_seconds=10
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            echo "Checking deploy status (attempt $attempt/$max_attempts)..."
+            status_resp=$(curl -s -H "Authorization: Bearer $API_KEY" "https://api.render.com/v1/deploys/$deploy_id")
+            if command -v jq >/dev/null 2>&1; then
+              state=$(echo "$status_resp" | jq -r '.state // .status // empty')
+            else
+              # Fallback to python but guard against JSON errors
+              state=$(echo "$status_resp" | python -c "import sys,json
+import sys
+try:
+  d=json.load(sys.stdin)
+  print(d.get('state') or d.get('status') or '')
+except Exception:
+  print('')") || true
+            fi
+            echo "Current deploy state: '$state'"
+            if [ "$state" = "succeeded" ] || [ "$state" = "success" ] || [ "$state" = "active" ]; then
+              echo "Deploy succeeded (state=$state)"
+              break
+            fi
+            if [ "$state" = "failed" ] || [ "$state" = "errored" ] || [ "$state" = "error" ]; then
+              echo "Deploy failed (state=$state)" >&2
+              echo "Deploy details: $status_resp"
+              exit 1
+            fi
+            echo "Waiting $sleep_seconds seconds before next check..."
+            sleep $sleep_seconds
+          done
+
+          if [ $attempt -ge $max_attempts ]; then
+            echo "Timed out waiting for Render deploy to finish" >&2
+            exit 1
+          fi
+
+          # Optional health check against the deployed service URL
+          if [ -n "${RENDER_SERVICE_URL:-}" ]; then
+            echo "Running post-deploy health check against $RENDER_SERVICE_URL/api/status"
+            # Poll the health endpoint a few times
+            hc_attempts=12
+            hc_wait=5
+            hc_ok=false
+            for i in $(seq 1 $hc_attempts); do
+              echo "Health check attempt $i/$hc_attempts..."
+              http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$RENDER_SERVICE_URL/api/status" || echo "000")
+              echo "Health endpoint returned HTTP $http_code"
+              if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+                hc_ok=true
+                break
+              fi
+              sleep $hc_wait
+            done
+
+            if [ "$hc_ok" = true ]; then
+              echo "Health check passed"
+            else
+              echo "Health check failed after $hc_attempts attempts" >&2
+              exit 1
+            fi
+          else
+            echo "RENDER_SERVICE_URL not set; skipping health check"
+          fi

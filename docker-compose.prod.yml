@@ -1,0 +1,62 @@
+services:
+  mongo:
+    image: mongo:6.0
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: crosspostme
+
+  backend:
+    build: ./app/backend
+    command: uvicorn backend.server:app --host 0.0.0.0 --port 8000
+    volumes:
+      # Mount source for development, remove or use read-only for production if not hot-reloading
+      - ./app/backend:/app/backend
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: crosspostme
+      # IMPORTANT: Replace example.com with your actual frontend domain
+      CORS_ORIGINS: "https://www.your-frontend-domain.com,http://localhost:3000" # Allow your domain and localhost for testing
+    expose:
+      - "8000"
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile # Use the production Dockerfile
+    # IMPORTANT: Replace www.your-frontend-domain.com with your actual domain
+    environment:
+      VITE_BACKEND_URL: http://backend:8000 # Internal Docker network URL
+    ports:
+      - "80:80" # Map port 80 (HTTP) to the host for external access
+    depends_on:
+      - backend
+
+  prometheus:
+    image: prom/prometheus
+    restart: always
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  mongo_data:
+  prometheus_data:
+  grafana_data:

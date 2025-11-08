@@ -1,0 +1,93 @@
+name: CI checks
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+# permissions are not set to write-all; only minimal permissions are used
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install backend requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --user -r backend/requirements.txt
+      - name: Run brand checker
+        run: |
+          # try both repository layouts that appear in CI runs (/github/workspace or nested app/)
+          if [ -f backend/scripts/check_no_legacy_brand.py ]; then
+            python backend/scripts/check_no_legacy_brand.py || true
+          elif [ -f app/backend/scripts/check_no_legacy_brand.py ]; then
+            python app/backend/scripts/check_no_legacy_brand.py || true
+          else
+            echo "No brand checker script found; skipping"
+          fi
+        # If you prefer to fail PRs that include legacy tokens, remove '|| true'
+      - name: Run backend tests (only tests folder)
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          if [ -d backend/tests ]; then
+            pytest -q backend/tests
+          else
+            echo "No backend/tests directory found; skipping pytest"
+          fi
+      - name: Notify Slack on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,workflow,job,ref,elapsed
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || '' }}
+      - name: Notify Slack on success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,workflow,job,ref,elapsed
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  frontend:
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run frontend tests in Node container
+        uses: addnab/docker-run-action@v3
+        with:
+          image: node:22.20.0-bullseye
+          options: --workdir /github/workspace
+          run: |
+            npm install -g yarn@1
+            cd /github/workspace/frontend
+            yarn install --frozen-lockfile || yarn install
+            CI=true yarn test --watchAll=false
+      - name: Notify Slack on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,workflow,job,ref,elapsed
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack on success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,workflow,job,ref,elapsed
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

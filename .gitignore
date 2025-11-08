@@ -1,0 +1,66 @@
+# Ignore local snapshot
+master_snapshot/
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend build
+app/frontend/build/
+app/frontend/dist/
+
+# Python venvs
+.venv/
+venv/
+*.pyc
+__pycache__/
+
+# Secrets Vault - DO NOT COMMIT
+secrets_vault/
+vault.py
+setup-vault.sh
+
+# Environment files - NEVER COMMIT SECRETS
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+.env.render
+.env.testing
+*.env
+!.env.example
+!.env.*.example
+!.env.*.template
+
+# Test results
+test-results/
+coverage/
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp

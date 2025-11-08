@@ -1,0 +1,11 @@
+{
+  "_meta": {
+    "hash": {
+      "sha256": "PLACEHOLDER"
+    },
+    "pipfile-spec": 6,
+    "requires": {}
+  },
+  "default": {},
+  "develop": {}
+}
