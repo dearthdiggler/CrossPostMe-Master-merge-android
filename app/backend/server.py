@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
@@ -22,11 +23,16 @@ load_dotenv(ROOT_DIR / ".env")
 # DEBUG: Print MONGO_URL at startup to help diagnose Render env issues
 print("DEBUG: MONGO_URL at startup:", os.environ.get("MONGO_URL"))
 
+
 # Use typed database wrapper
 db = get_typed_db()
 
-# Create the main app without a prefix
-app = FastAPI()
+# Configure logging early so startup code can use logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -146,26 +152,14 @@ async def readiness_probe() -> Response:
     raise HTTPException(status_code=503, detail="unavailable")
 
 
-# Include the router in the main app
-app.include_router(api_router)
-
-# Include marketplace system routers
-app.include_router(auth.router)
-app.include_router(ads.router)
-app.include_router(platforms.router)
-app.include_router(platform_oauth.router)
-app.include_router(ai.router)
-app.include_router(diagrams.router)
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Initialize database indexes and other startup tasks."""
+# Define lifespan handler to replace deprecated on_event startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan handler: runs startup validation and index initialization, and closes DB on shutdown."""
     from backend.routes.auth import initialize_auth_indexes
 
     # Validate DB connectivity and retry a few times to survive transient
     # network / TLS negotiation failures on hosted platforms (Render, etc.).
-    # Environment variables let deploys tune behavior without code changes.
     max_attempts = int(os.environ.get("MONGO_STARTUP_MAX_RETRIES", "5"))
     base_delay = float(os.environ.get("MONGO_STARTUP_RETRY_DELAY_SECONDS", "3"))
 
@@ -198,9 +192,6 @@ async def startup_event() -> None:
         await asyncio.sleep(delay)
 
     else:
-        # Exhausted retries - fail fast so that hosting platform shows a clear
-        # crash reason and we can inspect logs (better than silent degraded
-        # behaviour).
         logger.error(
             "Failed to validate MongoDB connection after %d attempts. Aborting startup.",
             max_attempts,
@@ -210,6 +201,26 @@ async def startup_event() -> None:
     # Initialize indexes once DB connectivity is confirmed
     await initialize_auth_indexes()
 
+    try:
+        yield
+    finally:
+        db.close()
+
+
+# Create the main app with lifespan handler
+app = FastAPI(lifespan=lifespan)
+
+# Include the router in the main app
+app.include_router(api_router)
+
+# Include marketplace system routers
+app.include_router(auth.router)
+app.include_router(ads.router)
+app.include_router(platforms.router)
+app.include_router(platform_oauth.router)
+app.include_router(ai.router)
+app.include_router(diagrams.router)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -218,15 +229,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-
-@app.on_event("shutdown")
-async def shutdown_db_client() -> None:
-    db.close()
