@@ -41,14 +41,14 @@ This application handles sensitive credentials and API keys. Follow these securi
 cp app/backend/.env.example app/backend/.env
 ```
 
-2. **Generate your own encryption key:**
+1. **Generate your own encryption key:**
 
 ```python
 # Run this command to generate a secure encryption key:
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-3. **Update your .env file with the generated key:**
+1. **Update your .env file with the generated key:**
 
 ```bash
 CREDENTIAL_ENCRYPTION_KEY=your_generated_key_here

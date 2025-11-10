@@ -1,4 +1,5 @@
 ## Removed broken top-level function header
+
 import logging
 import os
 from datetime import datetime, timezone
@@ -9,11 +10,8 @@ from fastapi import APIRouter
 from backend.db import get_db
 
 logger = logging.getLogger(__name__)
-
-# Feature flags for Supabase migration
 USE_SUPABASE = os.getenv("USE_SUPABASE", "true").lower() in ("true", "1", "yes")
 PARALLEL_WRITE = os.getenv("PARALLEL_WRITE", "true").lower() in ("true", "1", "yes")
-
 router = APIRouter(prefix="/api/ads", tags=["ads"])
 
 
