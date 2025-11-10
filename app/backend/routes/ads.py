@@ -1,16 +1,12 @@
-def deserialize_datetime_fields(
-
+## Removed broken top-level function header
 import logging
 import os
-import random
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 
-from backend.db import get_db
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter
 
-from backend.auth import get_optional_current_user
-from backend.models import Ad, AdAnalytics, AdCreate, AdUpdate, DashboardStats, PostedAd
+from backend.db import get_db
 
 logger = logging.getLogger(__name__)
 
