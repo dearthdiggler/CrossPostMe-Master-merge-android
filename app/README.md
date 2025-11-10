@@ -2,6 +2,8 @@ read![CI](https://github.com/dearthdiggler/app/actions/workflows/ci.yml/badge.sv
 
 CrossPostMe.com — Local listings automation (developer README)
 
+IMPORTANT: Work only from `C:\Users\johnd\Desktop\CROSSPOSTME-MASTER`; do not commit changes from any other clone or directory.
+
 This repository contains a small demo stack powering the CrossPostMe web app: a FastAPI backend and a React frontend used for the UI. The copy and examples in this repo are neutralized product copy for development and do not include marketing assets.
 
 ## Quick start

@@ -1,5 +1,7 @@
 Developer notes — enabling Git hooks
 
+Important: Work only from `C:\Users\johnd\Desktop\CROSSPOSTME-MASTER`; do not commit changes from any other clone or directory.
+
 This repository includes a simple pre-commit hook under `.githooks/pre-commit` that prevents accidentally committing legacy brand tokens (for example, an old internal name).
 
 To enable the hook locally:

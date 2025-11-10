@@ -1,5 +1,7 @@
 # Backend Tests
 
+Important: Work only from `C:\Users\johnd\Desktop\CROSSPOSTME-MASTER`; do not commit changes from any other clone or directory.
+
 This directory contains tests for the CrossPostMe backend.
 
 ## Running Tests
