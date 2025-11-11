@@ -1,0 +1,3 @@
+ - Windows ARM support
+ - Improved publishing APIs
+ - Better guidance for dependency verification failures
