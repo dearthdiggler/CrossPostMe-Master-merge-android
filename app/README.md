@@ -93,6 +93,12 @@ If you accidentally commit secrets:
 
 Contact for developer questions: <crosspostme@gmail.com> — Phone: 623-777-9969
 
-```text
+## Recent Improvements & Migration
 
-```
+- Merged backend and Android improvements from all active clones.
+- Fully migrated backend from MongoDB to Supabase for reliability and scalability.
+- Removed all MongoDB dependencies and event loop errors.
+- Backend and tests now run Supabase-only, simplifying cloud-native deployment.
+- Ready for integration with AWS, Azure, or Google for backup and scaling.
+
+For investor and team updates, see INVESTOR_MARKET_ANALYSIS.md.
