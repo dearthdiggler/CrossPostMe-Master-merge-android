@@ -115,7 +115,26 @@ fun DashboardScreen(adsViewModel: AdsViewModel, navController: NavHostController
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        // ...existing ad list UI...
+        if (adsUiState.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        } else if (adsUiState.error != null) {
+            Text(adsUiState.error ?: "Unknown error", color = MaterialTheme.colorScheme.error)
+        } else if (adsUiState.ads.isEmpty()) {
+            Text("No ads found. Create your first ad!", modifier = Modifier.padding(8.dp))
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(adsUiState.ads) { ad ->
+                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(ad.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(ad.description, style = MaterialTheme.typography.bodyMedium)
+                            Text("Price: $${ad.price}", style = MaterialTheme.typography.bodySmall)
+                            Text("Status: ${ad.status}", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -124,6 +143,7 @@ fun LoginScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Login", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         OutlinedTextField(
@@ -140,16 +160,26 @@ fun LoginScreen(navController: NavHostController) {
             visualTransformation = PasswordVisualTransformation()
         )
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        }
         Button(
             onClick = {
                 if (email.isBlank() || password.isBlank()) {
                     error = "Email and password required"
                 } else {
+                    isLoading = true
                     // TODO: Connect to repository for login
-                    navController.navigate("dashboard")
+                    // Simulate loading
+                    LaunchedEffect(Unit) {
+                        kotlinx.coroutines.delay(1000)
+                        isLoading = false
+                        navController.navigate("dashboard")
+                    }
                 }
             },
-            modifier = Modifier.padding(top = 16.dp)
+            modifier = Modifier.padding(top = 16.dp),
+            enabled = !isLoading
         ) { Text("Login") }
     }
 }
@@ -160,6 +190,7 @@ fun RegisterScreen(navController: NavHostController) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Register", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         OutlinedTextField(
@@ -182,26 +213,93 @@ fun RegisterScreen(navController: NavHostController) {
             visualTransformation = PasswordVisualTransformation()
         )
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        }
         Button(
             onClick = {
                 if (email.isBlank() || password.isBlank() || username.isBlank()) {
                     error = "All fields required"
                 } else {
+                    isLoading = true
                     // TODO: Connect to repository for registration
-                    navController.navigate("dashboard")
+                    // Simulate loading
+                    LaunchedEffect(Unit) {
+                        kotlinx.coroutines.delay(1000)
+                        isLoading = false
+                        navController.navigate("dashboard")
+                    }
                 }
             },
-            modifier = Modifier.padding(top = 16.dp)
+            modifier = Modifier.padding(top = 16.dp),
+            enabled = !isLoading
         ) { Text("Register") }
     }
 }
 
 @Composable
 fun AdCreateScreen(adsViewModel: AdsViewModel, navController: NavHostController) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Create/Edit Ad", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        // ...ad creation/edit form UI...
-        Button(onClick = { navController.navigate("dashboard") }) { Text("Save Ad") }
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = { Text("Title") },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        )
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Description") },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        )
+        OutlinedTextField(
+            value = price,
+            onValueChange = { price = it },
+            label = { Text("Price") },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        )
+        OutlinedTextField(
+            value = category,
+            onValueChange = { category = it },
+            label = { Text("Category") },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        )
+        OutlinedTextField(
+            value = location,
+            onValueChange = { location = it },
+            label = { Text("Location") },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        )
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        }
+        Button(
+            onClick = {
+                if (title.isBlank() || description.isBlank() || price.isBlank() || category.isBlank() || location.isBlank()) {
+                    error = "All fields required"
+                } else {
+                    isLoading = true
+                    // TODO: Connect to ViewModel for ad creation
+                    // Simulate loading
+                    LaunchedEffect(Unit) {
+                        kotlinx.coroutines.delay(1000)
+                        isLoading = false
+                        navController.navigate("dashboard")
+                    }
+                }
+            },
+            modifier = Modifier.padding(top = 16.dp),
+            enabled = !isLoading
+        ) { Text("Save Ad") }
     }
 }
 
@@ -209,8 +307,9 @@ fun AdCreateScreen(adsViewModel: AdsViewModel, navController: NavHostController)
 fun PlatformManagementScreen(navController: NavHostController) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Platform Management", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        // ...platform account management UI...
-        Button(onClick = { navController.navigate("dashboard") }) { Text("Back to Dashboard") }
+        Text("Connect, test, and manage your marketplace accounts.", modifier = Modifier.padding(vertical = 8.dp))
+        // TODO: List connected platforms, add/remove/test accounts
+        Button(onClick = { navController.navigate("dashboard") }, modifier = Modifier.padding(top = 16.dp)) { Text("Back to Dashboard") }
     }
 }
 
@@ -218,8 +317,9 @@ fun PlatformManagementScreen(navController: NavHostController) {
 fun MessagingScreen(navController: NavHostController) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Messaging & Leads", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        // ...messaging and leads UI...
-        Button(onClick = { navController.navigate("dashboard") }) { Text("Back to Dashboard") }
+        Text("View and respond to messages and leads from all platforms.", modifier = Modifier.padding(vertical = 8.dp))
+        // TODO: List messages/leads, reply, mark as read/responded
+        Button(onClick = { navController.navigate("dashboard") }, modifier = Modifier.padding(top = 16.dp)) { Text("Back to Dashboard") }
     }
 }
         if (adsUiState.isLoading) {
