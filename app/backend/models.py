@@ -1,7 +1,51 @@
 import uuid
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+# Auth Models
+class EnhancedSignupRequest(BaseModel):
+    """Enhanced signup request with business intelligence data."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    # Basic account info
+    email: str
+    password: str
+    fullName: str
+    phone: str | None = None
+
+    # Business intelligence data
+    businessName: str | None = None
+    businessType: str | None = None
+    industry: str | None = None
+    currentMarketplaces: list[str] = []
+    monthlyListings: str | None = None
+    averageItemPrice: str | None = None
+    monthlyRevenue: str | None = None
+
+    # Pain points & needs
+    biggestChallenge: str | None = None
+    currentTools: list[str] = []
+    teamSize: str | None = None
+
+    # Goals & expectations
+    growthGoal: str | None = None
+    listingsGoal: str | None = None
+
+    # Marketing permissions
+    marketingEmails: bool = True
+    dataSharing: bool = True
+    betaTester: bool = False
+
+    # Additional metadata
+    trialType: str | None = None
+    signupDate: str | None = None
+    source: str | None = None
+    utmSource: str | None = None
+    utmMedium: str | None = None
+    utmCampaign: str | None = None
 
 
 # Platform Account Models
@@ -258,9 +302,9 @@ class EmailRule(BaseModel):
     user_id: str = "default"
     platform: str
     sender_pattern: str  # Email pattern to match (e.g., "*@craigslist.org")
-    subject_patterns: list[str] = (
-        []
-    )  # Subject line patterns to identify platform notifications
+    subject_patterns: list[
+        str
+    ] = []  # Subject line patterns to identify platform notifications
     parsing_rules: dict = {}  # Rules for extracting data from email content
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

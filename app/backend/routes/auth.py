@@ -6,9 +6,6 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 import pymongo.errors
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from jwt import PyJWTError as JWTError
-
 from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
@@ -24,6 +21,8 @@ from auth import (
     verify_password,
 )
 from db import get_typed_db
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from jwt import PyJWTError as JWTError
 from supabase_db import db as supabase_db
 
 # Configure logger for authentication events
@@ -210,10 +209,14 @@ async def register(request: Request, user_data: UserCreate):
                         "supabase_id": user_id,  # Track Supabase ID
                     }
                     await db.users.insert_one(mongo_doc)
-                    logger.info(f"✅ Parallel write to MongoDB successful for user: {user_id}")
+                    logger.info(
+                        f"✅ Parallel write to MongoDB successful for user: {user_id}"
+                    )
                 except Exception as e:
                     # Non-blocking: MongoDB failure doesn't fail the request
-                    logger.warning(f"⚠️  Parallel MongoDB write failed for user {user_id}: {e}")
+                    logger.warning(
+                        f"⚠️  Parallel MongoDB write failed for user {user_id}: {e}"
+                    )
 
             return User(
                 id=created_user["id"],
@@ -327,8 +330,12 @@ async def login(request: Request, login_data: UserLogin, response: Response):
                 )
 
             # Verify password (Supabase stores as password_hash, MongoDB as hashed_password)
-            password_hash = user_doc.get("password_hash") or user_doc.get("hashed_password")
-            if not password_hash or not verify_password(login_data.password, password_hash):
+            password_hash = user_doc.get("password_hash") or user_doc.get(
+                "hashed_password"
+            )
+            if not password_hash or not verify_password(
+                login_data.password, password_hash
+            ):
                 user_hash = _create_user_hash(login_data.username)
                 logger.warning(
                     "Login failed - incorrect password (Supabase) | "
@@ -494,9 +501,12 @@ async def refresh_token(request: Request, response: Response):
             # --- SUPABASE PATH (PRIMARY) ---
             try:
                 from supabase_db import get_supabase
+
                 client = get_supabase()
                 if client:
-                    result = client.table("users").select("*").eq("id", user_id).execute()
+                    result = (
+                        client.table("users").select("*").eq("id", user_id).execute()
+                    )
                     if result.data and len(result.data) > 0:
                         user_doc = result.data[0]
             except Exception as e:
@@ -631,6 +641,7 @@ async def get_current_user_info(
         try:
             # Query Supabase by user ID
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 result = client.table("users").select("*").eq("id", user_id).execute()
@@ -735,6 +746,224 @@ async def demo_login(request: Request, response: Response):
             "id": user_id,
             "username": "demo_user",
             "email": "demo@example.com",
+            "is_active": True,
+        },
+    }
+
+
+@router.post("/enhanced-signup")
+async def enhanced_signup(
+    request: Request, signup_data: EnhancedSignupRequest, response: Response
+):
+    """Enhanced signup with business intelligence data collection.
+
+    This endpoint creates a user account and stores detailed business
+    intelligence data for analytics and personalization.
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    user_id = str(uuid.uuid4())
+
+    # Validate email and password
+    if not signup_data.email or not signup_data.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email and password are required",
+        )
+
+    if len(signup_data.password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters",
+        )
+
+    # Hash password once for both databases
+    hashed_password = get_password_hash(signup_data.password)
+
+    # Derive username from email (first part before @)
+    username = signup_data.email.split("@")[0] + "_" + user_id[:8]
+
+    if USE_SUPABASE:
+        # Check if email already exists in Supabase
+        existing_user = supabase_db.get_user_by_email(signup_data.email)
+        if existing_user:
+            logger.warning(
+                "Enhanced signup failed - email already exists (Supabase) | "
+                f"timestamp={datetime.now(timezone.utc).isoformat()} | "
+                f"client_ip={client_ip} | "
+                f"reason=duplicate_email"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+
+        # Create user in Supabase
+        user_doc = {
+            "id": user_id,
+            "username": username,
+            "email": signup_data.email,
+            "password_hash": hashed_password,
+            "is_active": True,
+        }
+
+        created_user = supabase_db.create_user(user_doc)
+
+        # Store business intelligence data
+        bi_doc = {
+            "user_id": user_id,
+            "businessName": signup_data.businessName,
+            "businessType": signup_data.businessType,
+            "industry": signup_data.industry,
+            "currentMarketplaces": signup_data.currentMarketplaces,
+            "monthlyListings": signup_data.monthlyListings,
+            "averageItemPrice": signup_data.averageItemPrice,
+            "monthlyRevenue": signup_data.monthlyRevenue,
+            "biggestChallenge": signup_data.biggestChallenge,
+            "currentTools": signup_data.currentTools,
+            "teamSize": signup_data.teamSize,
+            "growthGoal": signup_data.growthGoal,
+            "listingsGoal": signup_data.listingsGoal,
+            "marketingEmails": signup_data.marketingEmails,
+            "dataSharing": signup_data.dataSharing,
+            "betaTester": signup_data.betaTester,
+            "trialType": signup_data.trialType,
+            "signupDate": signup_data.signupDate
+            or datetime.now(timezone.utc).isoformat(),
+            "source": signup_data.source,
+            "utmSource": signup_data.utmSource,
+            "utmMedium": signup_data.utmMedium,
+            "utmCampaign": signup_data.utmCampaign,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        try:
+            supabase_db.insert_business_intelligence(bi_doc)
+        except Exception as e:
+            logger.warning(f"Failed to store business intelligence data: {e}")
+
+        # PARALLEL WRITE: Also write to MongoDB
+        if PARALLEL_WRITE:
+            try:
+                mongo_user_doc = {
+                    "id": user_id,
+                    "username": username,
+                    "email": signup_data.email,
+                    "hashed_password": hashed_password,
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "supabase_id": user_id,
+                }
+                await db.users.insert_one(mongo_user_doc)
+
+                # Store BI data in MongoDB as well
+                mongo_bi_doc = bi_doc.copy()
+                await db.business_intelligence.insert_one(mongo_bi_doc)
+
+                logger.info(
+                    f"✅ Parallel write to MongoDB successful for user: {user_id}"
+                )
+            except Exception as e:
+                logger.warning(
+                    f"⚠️  Parallel MongoDB write failed for user {user_id}: {e}"
+                )
+
+    else:
+        # MongoDB path (fallback)
+        existing_user = await db.users.find_one({"email": signup_data.email})
+
+        if existing_user:
+            logger.warning(
+                "Enhanced signup failed - email already exists (MongoDB) | "
+                f"timestamp={datetime.now(timezone.utc).isoformat()} | "
+                f"client_ip={client_ip} | "
+                f"reason=duplicate_email"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+
+        # Create user in MongoDB
+        user_doc = {
+            "id": user_id,
+            "username": username,
+            "email": signup_data.email,
+            "hashed_password": hashed_password,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        try:
+            await db.users.insert_one(user_doc)
+        except pymongo.errors.DuplicateKeyError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
+
+        # Store business intelligence data
+        bi_doc = {
+            "user_id": user_id,
+            "businessName": signup_data.businessName,
+            "businessType": signup_data.businessType,
+            "industry": signup_data.industry,
+            "currentMarketplaces": signup_data.currentMarketplaces,
+            "monthlyListings": signup_data.monthlyListings,
+            "averageItemPrice": signup_data.averageItemPrice,
+            "monthlyRevenue": signup_data.monthlyRevenue,
+            "biggestChallenge": signup_data.biggestChallenge,
+            "currentTools": signup_data.currentTools,
+            "teamSize": signup_data.teamSize,
+            "growthGoal": signup_data.growthGoal,
+            "listingsGoal": signup_data.listingsGoal,
+            "marketingEmails": signup_data.marketingEmails,
+            "dataSharing": signup_data.dataSharing,
+            "betaTester": signup_data.betaTester,
+            "trialType": signup_data.trialType,
+            "signupDate": signup_data.signupDate
+            or datetime.now(timezone.utc).isoformat(),
+            "source": signup_data.source,
+            "utmSource": signup_data.utmSource,
+            "utmMedium": signup_data.utmMedium,
+            "utmCampaign": signup_data.utmCampaign,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        await db.business_intelligence.insert_one(bi_doc)
+
+    logger.info(
+        "Enhanced signup successful | "
+        f"timestamp={datetime.now(timezone.utc).isoformat()} | "
+        f"user_id={user_id} | "
+        f"client_ip={client_ip}"
+    )
+
+    # Create tokens
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={
+            "user_id": user_id,
+            "username": username,
+            "email": signup_data.email,
+            "is_active": True,
+            "is_admin": False,
+        },
+        expires_delta=access_token_expires,
+    )
+
+    refresh_token = create_refresh_token(user_id)
+
+    # Set secure httpOnly cookies
+    set_auth_cookies(response, access_token, refresh_token)
+
+    return {
+        "token": access_token,
+        "user": {
+            "id": user_id,
+            "username": username,
+            "email": signup_data.email,
             "is_active": True,
         },
     }

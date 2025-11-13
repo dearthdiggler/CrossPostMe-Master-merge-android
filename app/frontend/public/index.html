@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta
+      name="description"
+      content="CrossPostMe - Sell Everywhere. Post once to all marketplaces automatically."
+    />
+    <title>CrossPostMe - Sell Everywhere</title>
+
+    <!-- Preload critical fonts for faster text rendering -->
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      as="style"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Favicon and manifest -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.svg" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.svg" />
+
+    <!-- DNS prefetch for external services -->
+    <link rel="dns-prefetch" href="https://qcrxvfsqeortvcmwyrbn.supabase.co" />
+    <link rel="dns-prefetch" href="https://api.github.com" />
+
+    <!-- Preconnect for faster API connections -->
+    <link
+      rel="preconnect"
+      href="https://qcrxvfsqeortvcmwyrbn.supabase.co"
+      crossorigin
+    />
+
+    <!-- Performance: Optimize resource loading -->
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+
+    <!-- Minimal blocking script to prevent FOUC (Flash of Unstyled Content) -->
+    <script>
+      // Detect user's color preference
+      if (localStorage.getItem('theme') === 'dark' ||
+          (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+      // Remove splash screen class when DOM is ready
+      window.removeSplashScreen = function() {
+        const splash = document.getElementById('splash');
+        if (splash) splash.style.display = 'none';
+      };
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,55 +1,87 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import PublicDescription from "./components/PublicDescription";
-import AISection from "./components/AISection";
-import SpeedSection from "./components/SpeedSection";
-import WhyChoose from "./components/WhyChoose";
-import Services from "./components/Services";
-import Pricing from "./components/Pricing";
-import Company from "./components/Company";
-import Comparison from "./components/Comparison";
-import Benefits from "./components/Benefits";
-import Testimonial from "./components/Testimonial";
-import FAQ from "./components/FAQ";
-import Blog from "./components/Blog";
-import CTASection from "./components/CTASection";
-import Footer from "./components/Footer";
 import { Toaster } from "./components/ui/toaster";
 
 // Authentication
 import Login, { AuthProvider, useAuth } from "./components/Login";
 
-// Marketplace Pages
-import Dashboard from "./pages/Dashboard";
-import CreateAd from "./pages/CreateAd";
-import EditAd from "./pages/EditAd";
-import MyAds from "./pages/MyAds";
-import Platforms from "./pages/Platforms";
-import Analytics from "./pages/Analytics";
-import LogoShowcase from "./pages/LogoShowcase";
+// Lazy load non-critical homepage sections for faster initial paint
+const Hero = lazy(() => import("./components/Hero"));
+const PublicDescription = lazy(() => import("./components/PublicDescription"));
+const AISection = lazy(() => import("./components/AISection"));
+const SpeedSection = lazy(() => import("./components/SpeedSection"));
+const WhyChoose = lazy(() => import("./components/WhyChoose"));
+const Services = lazy(() => import("./components/Services"));
+const Pricing = lazy(() => import("./components/Pricing"));
+const Company = lazy(() => import("./components/Company"));
+const Comparison = lazy(() => import("./components/Comparison"));
+const Benefits = lazy(() => import("./components/Benefits"));
+const Testimonial = lazy(() => import("./components/Testimonial"));
+const FAQ = lazy(() => import("./components/FAQ"));
+const Blog = lazy(() => import("./components/Blog"));
+const CTASection = lazy(() => import("./components/CTASection"));
+const Footer = lazy(() => import("./components/Footer"));
+
+// Lazy load marketplace pages
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CreateAd = lazy(() => import("./pages/CreateAd"));
+const EditAd = lazy(() => import("./pages/EditAd"));
+const MyAds = lazy(() => import("./pages/MyAds"));
+const Platforms = lazy(() => import("./pages/Platforms"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const LogoShowcase = lazy(() => import("./pages/LogoShowcase"));
+
+// Simple loading fallback
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
 
 const Home = () => {
-  // Public homepage: always show full marketing content so visitors
-  // can see hero, pricing, company info, etc. Authentication only
-  // gates marketplace routes.
   return (
     <div className="min-h-screen bg-white">
-      <Hero />
-      {/* <AISection /> - Dormant: AI Lead Gen */}
-      <SpeedSection />
-      <WhyChoose />
-      <Services />
-      <Pricing />
-      <Comparison />
-      <Benefits />
-      <Testimonial />
-      <FAQ />
-      <Blog />
-      <CTASection />
-      <Footer />
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Hero />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <SpeedSection />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <WhyChoose />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Services />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Pricing />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Comparison />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Benefits />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Testimonial />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <FAQ />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Blog />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <CTASection />
+      </Suspense>
+      <Suspense fallback={<div style={{ height: "400px" }} />}>
+        <Footer />
+      </Suspense>
     </div>
   );
 };
@@ -70,65 +102,98 @@ function App() {
     <AuthProvider>
       <div className="App">
         <BrowserRouter>
-          {/* Navbar is intentionally rendered outside route-level guards so it's
-              always visible to all visitors (unauthenticated or not). */}
           <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Login mode="register" />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/company" element={<Company />} />
-            <Route
-              path="/marketplace/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/marketplace/create-ad"
-              element={
-                <ProtectedRoute>
-                  <CreateAd />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/marketplace/edit-ad/:id"
-              element={
-                <ProtectedRoute>
-                  <EditAd />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/marketplace/my-ads"
-              element={
-                <ProtectedRoute>
-                  <MyAds />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/marketplace/platforms"
-              element={
-                <ProtectedRoute>
-                  <Platforms />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/marketplace/analytics"
-              element={
-                <ProtectedRoute>
-                  <Analytics />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/logos" element={<LogoShowcase />} />
-          </Routes>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Login mode="register" />} />
+              <Route
+                path="/pricing"
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <Pricing />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/company"
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <Company />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/marketplace/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Dashboard />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketplace/create-ad"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <CreateAd />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketplace/edit-ad/:id"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <EditAd />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketplace/my-ads"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <MyAds />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketplace/platforms"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Platforms />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketplace/analytics"
+                element={
+                  <ProtectedRoute>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Analytics />
+                    </Suspense>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/logos"
+                element={
+                  <Suspense fallback={<LoadingFallback />}>
+                    <LogoShowcase />
+                  </Suspense>
+                }
+              />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
         <Toaster />
       </div>
