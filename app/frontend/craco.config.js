@@ -1,6 +1,5 @@
 // Load configuration from environment or config file
 const path = require("path");
-const CompressionPlugin = require("compression-webpack-plugin");
 
 // Environment variable overrides
 const config = {
@@ -15,17 +14,7 @@ module.exports = {
     configure: (webpackConfig, { env, paths }) => {
       // Production optimizations
       if (env === "production") {
-        // Enable gzip compression
-        webpackConfig.plugins.push(
-          new CompressionPlugin({
-            algorithm: "gzip",
-            test: /\.(js|css|html|svg)$/,
-            threshold: 1024, // Only compress files larger than 1KB
-            minRatio: 0.8,
-          })
-        );
-
-        // Optimize bundle size
+        // Optimize bundle size with better chunk splitting
         webpackConfig.optimization = {
           ...webpackConfig.optimization,
           runtimeChunk: "single",
