@@ -23,6 +23,7 @@ from auth import (
 from db import get_typed_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from jwt import PyJWTError as JWTError
+from models import EnhancedSignupRequest
 from supabase_db import db as supabase_db
 
 # Configure logger for authentication events

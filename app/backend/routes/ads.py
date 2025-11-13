@@ -5,9 +5,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
+from db import get_db
 from fastapi import APIRouter
-
-from backend.db import get_db
 
 logger = logging.getLogger(__name__)
 USE_SUPABASE = os.getenv("USE_SUPABASE", "true").lower() in ("true", "1", "yes")

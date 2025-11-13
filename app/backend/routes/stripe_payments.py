@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict
 
 import stripe
-from backend.auth import get_current_user
-from backend.db import get_typed_db
+from auth import get_current_user
+from db import get_typed_db
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
@@ -24,9 +24,10 @@ logger = logging.getLogger(__name__)
 # Initialize Stripe with secret key from vault
 try:
     from vault import get_secret
-    stripe.api_key = get_secret('stripe_secret_key')
-    STRIPE_WEBHOOK_SECRET = get_secret('stripe_webhook_secret')
-except Exception as e:
+
+    stripe.api_key = get_secret("stripe_secret_key")
+    STRIPE_WEBHOOK_SECRET = get_secret("stripe_webhook_secret")
+except Exception:
     # Fallback to environment variable
     stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
     STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
@@ -259,7 +260,9 @@ async def create_setup_intent(
             usage="off_session",  # Allow charging later
         )
 
-        logger.info(f"Created setup intent {setup_intent.id} for user {current_user.get('id')}")
+        logger.info(
+            f"Created setup intent {setup_intent.id} for user {current_user.get('id')}"
+        )
 
         return {"clientSecret": setup_intent.client_secret}
 
@@ -462,6 +465,7 @@ async def handle_payment_succeeded(payment_intent: Dict[str, Any]) -> None:
         # --- SUPABASE PATH (PRIMARY) ---
         try:
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 # Insert into business_intelligence table (since no dedicated payments table exists)
@@ -472,8 +476,8 @@ async def handle_payment_succeeded(payment_intent: Dict[str, Any]) -> None:
                         "payment_intent_id": payment_intent["id"],
                         "amount": amount,
                         "currency": payment_intent.get("currency"),
-                        "stripe_data": payment_intent
-                    }
+                        "stripe_data": payment_intent,
+                    },
                 }
                 client.table("business_intelligence").insert(bi_data).execute()
                 logger.info(f"Payment success logged to Supabase BI for user {user_id}")
@@ -482,9 +486,13 @@ async def handle_payment_succeeded(payment_intent: Dict[str, Any]) -> None:
                 if PARALLEL_WRITE:
                     try:
                         await db.payments.insert_one(payment_data)
-                        logger.info(f"✅ Parallel write to MongoDB successful for payment: {payment_intent['id']}")
+                        logger.info(
+                            f"✅ Parallel write to MongoDB successful for payment: {payment_intent['id']}"
+                        )
                     except Exception as e:
-                        logger.warning(f"⚠️  Parallel MongoDB write failed for payment {payment_intent['id']}: {e}")
+                        logger.warning(
+                            f"⚠️  Parallel MongoDB write failed for payment {payment_intent['id']}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to log payment success to Supabase: {e}")
     else:
@@ -513,6 +521,7 @@ async def handle_payment_failed(payment_intent: Dict[str, Any]) -> None:
         # --- SUPABASE PATH (PRIMARY) ---
         try:
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 # Insert into business_intelligence table
@@ -524,8 +533,8 @@ async def handle_payment_failed(payment_intent: Dict[str, Any]) -> None:
                         "amount": payment_intent.get("amount"),
                         "currency": payment_intent.get("currency"),
                         "error": payment_intent.get("last_payment_error"),
-                        "stripe_data": payment_intent
-                    }
+                        "stripe_data": payment_intent,
+                    },
                 }
                 client.table("business_intelligence").insert(bi_data).execute()
                 logger.info(f"Payment failure logged to Supabase BI for user {user_id}")
@@ -534,9 +543,13 @@ async def handle_payment_failed(payment_intent: Dict[str, Any]) -> None:
                 if PARALLEL_WRITE:
                     try:
                         await db.payments.insert_one(payment_data)
-                        logger.info(f"✅ Parallel write to MongoDB successful for failed payment: {payment_intent['id']}")
+                        logger.info(
+                            f"✅ Parallel write to MongoDB successful for failed payment: {payment_intent['id']}"
+                        )
                     except Exception as e:
-                        logger.warning(f"⚠️  Parallel MongoDB write failed for failed payment {payment_intent['id']}: {e}")
+                        logger.warning(
+                            f"⚠️  Parallel MongoDB write failed for failed payment {payment_intent['id']}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to log payment failure to Supabase: {e}")
     else:
@@ -569,31 +582,40 @@ async def handle_subscription_created(subscription: Dict[str, Any]) -> None:
         # --- SUPABASE PATH (PRIMARY) ---
         try:
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 # Update user subscription status in users table
-                client.table("users").update({
-                    "subscription_status": subscription.get("status"),
-                    "subscription_tier": "premium",  # Default tier, could be determined from price
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }).eq("id", user_id).execute()
+                client.table("users").update(
+                    {
+                        "subscription_status": subscription.get("status"),
+                        "subscription_tier": "premium",  # Default tier, could be determined from price
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                ).eq("id", user_id).execute()
 
                 # Log to business intelligence
                 bi_data = {
                     "user_id": user_id,
                     "event_type": "subscription_created",
-                    "event_data": subscription_data
+                    "event_data": subscription_data,
                 }
                 client.table("business_intelligence").insert(bi_data).execute()
-                logger.info(f"Subscription created and logged to Supabase for user {user_id}")
+                logger.info(
+                    f"Subscription created and logged to Supabase for user {user_id}"
+                )
 
                 # PARALLEL WRITE: Also save to MongoDB
                 if PARALLEL_WRITE:
                     try:
                         await db.subscriptions.insert_one(subscription_data)
-                        logger.info(f"✅ Parallel write to MongoDB successful for subscription: {subscription_id}")
+                        logger.info(
+                            f"✅ Parallel write to MongoDB successful for subscription: {subscription_id}"
+                        )
                     except Exception as e:
-                        logger.warning(f"⚠️  Parallel MongoDB write failed for subscription {subscription_id}: {e}")
+                        logger.warning(
+                            f"⚠️  Parallel MongoDB write failed for subscription {subscription_id}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to handle subscription creation in Supabase: {e}")
     else:
@@ -611,6 +633,7 @@ async def handle_subscription_updated(subscription: Dict[str, Any]) -> None:
         # --- SUPABASE PATH (PRIMARY) ---
         try:
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 # Find user by subscription_id (this is tricky without a dedicated subscriptions table)
@@ -624,8 +647,8 @@ async def handle_subscription_updated(subscription: Dict[str, Any]) -> None:
                         "subscription_id": subscription_id,
                         "status": subscription.get("status"),
                         "current_period_end": subscription.get("current_period_end"),
-                        "stripe_data": subscription
-                    }
+                        "stripe_data": subscription,
+                    },
                 }
                 # Note: Without user_id, we can't insert to BI table due to RLS
                 # This would need a subscriptions table to properly track
@@ -640,13 +663,19 @@ async def handle_subscription_updated(subscription: Dict[str, Any]) -> None:
                             {
                                 "$set": {
                                     "status": subscription.get("status"),
-                                    "current_period_end": subscription.get("current_period_end"),
+                                    "current_period_end": subscription.get(
+                                        "current_period_end"
+                                    ),
                                 }
                             },
                         )
-                        logger.info(f"✅ Parallel write to MongoDB successful for subscription update: {subscription_id}")
+                        logger.info(
+                            f"✅ Parallel write to MongoDB successful for subscription update: {subscription_id}"
+                        )
                     except Exception as e:
-                        logger.warning(f"⚠️  Parallel MongoDB write failed for subscription update {subscription_id}: {e}")
+                        logger.warning(
+                            f"⚠️  Parallel MongoDB write failed for subscription update {subscription_id}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to handle subscription update in Supabase: {e}")
     else:
@@ -672,6 +701,7 @@ async def handle_subscription_deleted(subscription: Dict[str, Any]) -> None:
         # --- SUPABASE PATH (PRIMARY) ---
         try:
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 # Log to business intelligence
@@ -679,8 +709,8 @@ async def handle_subscription_deleted(subscription: Dict[str, Any]) -> None:
                     "event_type": "subscription_deleted",
                     "event_data": {
                         "subscription_id": subscription_id,
-                        "stripe_data": subscription
-                    }
+                        "stripe_data": subscription,
+                    },
                 }
                 logger.info(f"Subscription deleted logged: {subscription_id}")
 
@@ -689,18 +719,21 @@ async def handle_subscription_deleted(subscription: Dict[str, Any]) -> None:
                     try:
                         await db.subscriptions.update_one(
                             {"subscription_id": subscription_id},
-                            {"$set": {"status": "canceled"}}
+                            {"$set": {"status": "canceled"}},
                         )
-                        logger.info(f"✅ Parallel write to MongoDB successful for subscription deletion: {subscription_id}")
+                        logger.info(
+                            f"✅ Parallel write to MongoDB successful for subscription deletion: {subscription_id}"
+                        )
                     except Exception as e:
-                        logger.warning(f"⚠️  Parallel MongoDB write failed for subscription deletion {subscription_id}: {e}")
+                        logger.warning(
+                            f"⚠️  Parallel MongoDB write failed for subscription deletion {subscription_id}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to handle subscription deletion in Supabase: {e}")
     else:
         # --- MONGODB PATH (FALLBACK) ---
         await db.subscriptions.update_one(
-            {"subscription_id": subscription_id},
-            {"$set": {"status": "canceled"}}
+            {"subscription_id": subscription_id}, {"$set": {"status": "canceled"}}
         )
 
 
@@ -714,6 +747,7 @@ async def handle_invoice_paid(invoice: Dict[str, Any]) -> None:
         # --- SUPABASE PATH (PRIMARY) ---
         try:
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 # Log to business intelligence
@@ -723,8 +757,8 @@ async def handle_invoice_paid(invoice: Dict[str, Any]) -> None:
                         "subscription_id": subscription_id,
                         "invoice_id": invoice.get("id"),
                         "amount": invoice.get("amount_paid"),
-                        "stripe_data": invoice
-                    }
+                        "stripe_data": invoice,
+                    },
                 }
                 logger.info(f"Invoice paid logged: {subscription_id}")
 
@@ -733,18 +767,22 @@ async def handle_invoice_paid(invoice: Dict[str, Any]) -> None:
                     try:
                         await db.subscriptions.update_one(
                             {"subscription_id": subscription_id},
-                            {"$set": {"last_payment_status": "paid"}}
+                            {"$set": {"last_payment_status": "paid"}},
                         )
-                        logger.info(f"✅ Parallel write to MongoDB successful for invoice paid: {subscription_id}")
+                        logger.info(
+                            f"✅ Parallel write to MongoDB successful for invoice paid: {subscription_id}"
+                        )
                     except Exception as e:
-                        logger.warning(f"⚠️  Parallel MongoDB write failed for invoice paid {subscription_id}: {e}")
+                        logger.warning(
+                            f"⚠️  Parallel MongoDB write failed for invoice paid {subscription_id}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to handle invoice paid in Supabase: {e}")
     else:
         # --- MONGODB PATH (FALLBACK) ---
         await db.subscriptions.update_one(
             {"subscription_id": subscription_id},
-            {"$set": {"last_payment_status": "paid"}}
+            {"$set": {"last_payment_status": "paid"}},
         )
 
 
@@ -758,6 +796,7 @@ async def handle_invoice_failed(invoice: Dict[str, Any]) -> None:
         # --- SUPABASE PATH (PRIMARY) ---
         try:
             from supabase_db import get_supabase
+
             client = get_supabase()
             if client:
                 # Log to business intelligence
@@ -767,8 +806,8 @@ async def handle_invoice_failed(invoice: Dict[str, Any]) -> None:
                         "subscription_id": subscription_id,
                         "invoice_id": invoice.get("id"),
                         "amount": invoice.get("amount_due"),
-                        "stripe_data": invoice
-                    }
+                        "stripe_data": invoice,
+                    },
                 }
                 logger.warning(f"Invoice failed logged: {subscription_id}")
 
@@ -779,9 +818,13 @@ async def handle_invoice_failed(invoice: Dict[str, Any]) -> None:
                             {"subscription_id": subscription_id},
                             {"$set": {"last_payment_status": "failed"}},
                         )
-                        logger.info(f"✅ Parallel write to MongoDB successful for invoice failed: {subscription_id}")
+                        logger.info(
+                            f"✅ Parallel write to MongoDB successful for invoice failed: {subscription_id}"
+                        )
                     except Exception as e:
-                        logger.warning(f"⚠️  Parallel MongoDB write failed for invoice failed {subscription_id}: {e}")
+                        logger.warning(
+                            f"⚠️  Parallel MongoDB write failed for invoice failed {subscription_id}: {e}"
+                        )
         except Exception as e:
             logger.error(f"Failed to handle invoice failed in Supabase: {e}")
     else:
@@ -810,12 +853,15 @@ async def get_stripe_config() -> Dict[str, str]:
     """
     try:
         from vault import get_secret
-        publishable_key = get_secret('stripe_publishable_key')
+
+        publishable_key = get_secret("stripe_publishable_key")
     except Exception:
         publishable_key = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
 
     if not publishable_key:
-        logger.warning("STRIPE_PUBLISHABLE_KEY not found in vault or environment variables")
+        logger.warning(
+            "STRIPE_PUBLISHABLE_KEY not found in vault or environment variables"
+        )
 
     return {
         "publishable_key": publishable_key,

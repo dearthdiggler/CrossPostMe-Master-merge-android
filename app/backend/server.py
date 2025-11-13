@@ -7,19 +7,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
+from db import get_typed_db
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field
-from starlette.middleware.cors import CORSMiddleware
-
-from .db import get_typed_db
 
 # Import route modules
-from .routes import ads, ai, auth, diagrams, platform_oauth, platforms
+from routes import ads, ai, auth, diagrams, platform_oauth, platforms
+from starlette.middleware.cors import CORSMiddleware
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
-
 
 
 # Use typed database wrapper
@@ -154,55 +152,65 @@ async def readiness_probe() -> Response:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan handler: runs startup validation and index initialization, and closes DB on shutdown."""
-    from backend.routes.auth import initialize_auth_indexes
+    from routes.auth import initialize_auth_indexes
 
-    # Validate DB connectivity and retry a few times to survive transient
-    # network / TLS negotiation failures on hosted platforms (Render, etc.).
-    max_attempts = int(os.environ.get("MONGO_STARTUP_MAX_RETRIES", "5"))
-    base_delay = float(os.environ.get("MONGO_STARTUP_RETRY_DELAY_SECONDS", "3"))
+    # Only validate DB if MongoDB client exists
+    if hasattr(db, "db") and db.db is not None:
+        # Validate DB connectivity and retry a few times to survive transient
+        # network / TLS negotiation failures on hosted platforms (Render, etc.).
+        max_attempts = int(os.environ.get("MONGO_STARTUP_MAX_RETRIES", "5"))
+        base_delay = float(os.environ.get("MONGO_STARTUP_RETRY_DELAY_SECONDS", "3"))
 
-    attempt = 0
-    while attempt < max_attempts:
-        attempt += 1
-        try:
-            ok = await db.validate_connection()
-        except Exception as exc:  # pragma: no cover - defensive
+        attempt = 0
+        while attempt < max_attempts:
+            attempt += 1
+            try:
+                ok = await db.validate_connection()
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.warning(
+                    "Attempt %d/%d - unexpected error while validating DB connection: %s",
+                    attempt,
+                    max_attempts,
+                    exc,
+                )
+                ok = False
+
+            if ok:
+                logger.info("MongoDB validated on attempt %d/%d", attempt, max_attempts)
+                break
+
+            # Not connected yet - wait with exponential backoff
+            delay = base_delay * attempt
             logger.warning(
-                "Attempt %d/%d - unexpected error while validating DB connection: %s",
+                "MongoDB not reachable (attempt %d/%d). Retrying in %.1fs...",
                 attempt,
                 max_attempts,
-                exc,
+                delay,
             )
-            ok = False
+            await asyncio.sleep(delay)
 
-        if ok:
-            logger.info("MongoDB validated on attempt %d/%d", attempt, max_attempts)
-            break
+        else:
+            logger.warning(
+                "Failed to validate MongoDB connection after %d attempts. Continuing without MongoDB.",
+                max_attempts,
+            )
 
-        # Not connected yet - wait with exponential backoff
-        delay = base_delay * attempt
-        logger.warning(
-            "MongoDB not reachable (attempt %d/%d). Retrying in %.1fs...",
-            attempt,
-            max_attempts,
-            delay,
-        )
-        await asyncio.sleep(delay)
-
+        # Initialize indexes once DB connectivity is confirmed (if available)
+        try:
+            await initialize_auth_indexes()
+        except Exception as e:
+            logger.warning(f"Could not initialize auth indexes: {e}")
     else:
-        logger.error(
-            "Failed to validate MongoDB connection after %d attempts. Aborting startup.",
-            max_attempts,
-        )
-        raise RuntimeError("Failed to validate MongoDB connection during startup")
-
-    # Initialize indexes once DB connectivity is confirmed
-    await initialize_auth_indexes()
+        logger.info("Database not configured. Running in limited mode.")
 
     try:
         yield
     finally:
-        db.close()
+        if hasattr(db, "close"):
+            try:
+                db.close()
+            except Exception as e:
+                logger.warning(f"Error closing database: {e}")
 
 
 # Create the main app with lifespan handler

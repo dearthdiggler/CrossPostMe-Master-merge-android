@@ -5,11 +5,17 @@ Replaces MongoDB with PostgreSQL via Supabase
 
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from dotenv import load_dotenv
 from supabase import Client, create_client
 
 logger = logging.getLogger(__name__)
+
+# Load .env file
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / ".env")
 
 # 🔐 Get Supabase credentials from vault (with env fallback)
 try:
@@ -31,6 +37,8 @@ if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
     )
     SUPABASE_URL = None
     SUPABASE_SERVICE_KEY = None
+else:
+    logger.info(f"✅ Supabase configured: {SUPABASE_URL}")
 
 # Initialize Supabase client (singleton)
 _supabase_client: Optional[Client] = None
@@ -75,6 +83,18 @@ class SupabaseDB:
             raise RuntimeError(
                 "Supabase client not initialized. Check SUPABASE_URL and SUPABASE_SERVICE_KEY"
             )
+
+    async def validate_connection(self) -> bool:
+        """Validate Supabase connection"""
+        if not self.client:
+            return False
+        try:
+            # Try a simple query to validate connection
+            self.client.table("users").select("count").eq("id", "nonexistent").execute()
+            return True
+        except Exception as e:
+            logger.error(f"Error validating Supabase connection: {e}")
+            return False
 
     # ==================== USERS ====================
 
