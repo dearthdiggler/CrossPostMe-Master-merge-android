@@ -21,7 +21,7 @@ setup(
         "python-dotenv>=1.0.1,<2.0.0",  # Prevent breaking changes
         # Authentication and security
         "pyjwt>=2.10.1,<3.0.0",  # JWT handling
-        "bcrypt>=4.1.3,<5.0.0",  # Password hashing
+        "bcrypt>=4.1.3,<6.0.0",  # Password hashing
         "passlib>=1.7.4,<2.0.0",  # Password utilities
         "cryptography>=42.0.8,<47.0.0",  # Encryption (incremental releases)
         "python-jose>=3.3.0,<4.0.0",  # JOSE/JWT
