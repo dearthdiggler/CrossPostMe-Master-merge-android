@@ -23,7 +23,7 @@ setup(
         "pyjwt>=2.10.1,<3.0.0",  # JWT handling
         "bcrypt>=4.1.3,<5.0.0",  # Password hashing
         "passlib>=1.7.4,<2.0.0",  # Password utilities
-        "cryptography>=42.0.8,<43.0.0",  # Encryption (incremental releases)
+        "cryptography>=42.0.8,<47.0.0",  # Encryption (incremental releases)
         "python-jose>=3.3.0,<4.0.0",  # JOSE/JWT
         # HTTP client and utilities
         "httpx>=0.27.0,<1.0.0",  # Async HTTP client
