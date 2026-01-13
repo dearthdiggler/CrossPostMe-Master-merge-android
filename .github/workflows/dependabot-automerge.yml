@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Auto-approve Dependabot PR using REST API
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -41,7 +41,7 @@ jobs:
           merge-method: squash
 
       - name: Comment that auto-merge was enabled
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const pr = context.payload.pull_request;
