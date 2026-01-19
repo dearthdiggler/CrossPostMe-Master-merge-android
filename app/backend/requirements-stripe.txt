@@ -2,7 +2,7 @@
 # Install with: pip install -r requirements-stripe.txt
 
 # Stripe Python SDK
-stripe==14.1.0
+stripe==14.2.0
 
 # Already in main requirements.txt but listed here for reference:
 # fastapi
